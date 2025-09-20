@@ -53,7 +53,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         issue-number: ${{ github.event.pull_request.number }}
         body: |
-          ### Terraform Plan for workspace `${{ steps.plan.outputs.workspace || terraform.workspace }}`
+          ### Terraform Plan for workspace `${{ steps.plan.outputs.workspace }}`
           ```
           ${{ steps.plan.outputs.plan }}
           ```
@@ -61,7 +61,6 @@ jobs:
   terraform-apply:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: []
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -83,7 +82,7 @@ jobs:
 
     - name: Select workspace
       run: |
-        terraform workspace select prod || terraform workspace new prod
+        terraform workspace select dev || terraform workspace new dev
 
     - name: Terraform apply
       run: terraform apply -auto-approve
