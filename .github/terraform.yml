@@ -1,0 +1,89 @@
+name: Terraform
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches: [ main ]
+
+jobs:
+  terraform-plan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials (via GitHub OIDC)
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: us-east-1
+        role-session-name: tf-plan-session
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.0
+
+    - name: Terraform init
+      run: terraform init -input=false
+
+    - name: Select workspace
+      run: |
+        # map PR base branch to workspace (simple example)
+        if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
+          terraform workspace select prod || terraform workspace new prod
+        elif [ "${{ github.event.pull_request.base.ref }}" = "staging" ]; then
+          terraform workspace select staging || terraform workspace new staging
+        else
+          terraform workspace select dev || terraform workspace new dev
+        fi
+
+    - name: Terraform plan
+      id: plan
+      run: |
+        terraform plan -no-color -out=tfplan
+        terraform show -no-color tfplan > plan.txt
+        echo "::set-output name=plan::$(sed -n '1,400p' plan.txt | sed 's/%/%%/g' | sed ':a;N;$!ba;s/\n/\\n/g')"
+
+    - name: Comment plan on PR
+      uses: peter-evans/create-or-update-comment@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        issue-number: ${{ github.event.pull_request.number }}
+        body: |
+          ### Terraform Plan for workspace `${{ steps.plan.outputs.workspace || terraform.workspace }}`
+          ```
+          ${{ steps.plan.outputs.plan }}
+          ```
+
+  terraform-apply:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: []
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials (via GitHub OIDC)
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+        aws-region: us-east-1
+        role-session-name: tf-apply-session
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.0
+
+    - name: Terraform init
+      run: terraform init -input=false
+
+    - name: Select workspace
+      run: |
+        terraform workspace select prod || terraform workspace new prod
+
+    - name: Terraform apply
+      run: terraform apply -auto-approve
