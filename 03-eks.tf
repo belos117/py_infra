@@ -11,16 +11,12 @@ module "vpc" {
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   name            = "eks-cluster-${terraform.workspace}"
-  version         = "1.28"
-  subnets         = concat(module.vpc.public_subnets, module.vpc.private_subnets)
+  version         = "21.3.1"
   vpc_id          = module.vpc.vpc_id
-  manage_aws_auth = true
-  # node groups, fargate etc...
-  node_groups = { default = {
-    desired_capacity = 2
-    instance_type    = "t3.medium"
+  eks_managed_node_groups = {
+    default = {
+      desired_capacity = 2
+      instance_type    = "t3.medium"
     }
   }
-  # create OIDC provider for the cluster (module supports it)
-  create_oidc = true
 }
