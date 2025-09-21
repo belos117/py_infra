@@ -32,23 +32,11 @@ jobs:
     - name: Terraform init
       run: terraform init -input=false
 
-    - name: Select workspace
-      run: |
-        # map PR base branch to workspace (simple example)
-        if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
-          terraform workspace select prod || terraform workspace new prod
-        elif [ "${{ github.event.pull_request.base.ref }}" = "staging" ]; then
-          terraform workspace select staging || terraform workspace new staging
-        else
-          terraform workspace select dev || terraform workspace new dev
-        fi
-
     - name: Terraform plan
       id: plan
       run: |
         terraform plan -no-color -out=tfplan
         terraform show -no-color tfplan > plan.txt
-        echo "::set-output name=plan::$(sed -n '1,400p' plan.txt | sed 's/%/%%/g' | sed ':a;N;$!ba;s/\n/\\n/g')"
 
     - name: Comment plan on PR
       uses: peter-evans/create-or-update-comment@v2
