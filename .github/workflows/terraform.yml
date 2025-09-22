@@ -1,3 +1,4 @@
+# Github Actions workflow file to automate Terraform plan and apply
 name: Terraform
 
 on:
