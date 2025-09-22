@@ -70,9 +70,10 @@ jobs:
         role-session-name: tf-apply-session
 
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       with:
-        terraform_version: 1.6.0
+        cli_config_credentials_token: ${{ secrets.TF_TOKEN }}
+        terraform_version: 1.1.7
 
     - name: Terraform init
       run: terraform init -input=false
