@@ -40,7 +40,9 @@ jobs:
       run: |
         terraform plan -no-color -out=tfplan
         terraform show -no-color tfplan > plan.txt
-        echo "plan=$(sed -n '1,400p' plan.txt | sed 's/%/%%/g' | sed ':a;N;$!ba;s/\n/\\n/g')" >> $GITHUB_OUTPUT
+        echo "plan<<EOF" >> $GITHUB_OUTPUT
+        sed -n '1,400p' plan.txt | sed 's/%/%%/g' >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Comment plan on PR
       uses: peter-evans/create-or-update-comment@v2
