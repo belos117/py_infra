@@ -6,8 +6,8 @@ data "aws_availability_zones" "available" {
 }
 
 module "vpc" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=7e6c2e9e3e1e6e8e3a2b6e2e8e2e8e2e8e2e8e2e" # commit hash for v5.8.1
-  # version = "5.8.1"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.8.1"
 
   name = "eks-${terraform.workspace}"
 
@@ -31,7 +31,8 @@ module "vpc" {
 }
 
 module "eks" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-eks.git?ref=7e2e6e9e3e1e6e8e3a2b6e2e8e2e8e2e8e2e8e2e"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 21.0"
 
   enable_cluster_creator_admin_permissions = true
 
@@ -66,7 +67,7 @@ data "aws_iam_policy" "ebs_csi_policy" {
 }
 
 module "irsa-ebs-csi" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-iam.git//modules/iam-assumable-role-with-oidc?ref=8c1e7e2e3e1e6e8e3a2b6e2e8e2e8e2e8e2e8e2e" # commit hash for v6.2.1
+  source  = "terraform-aws-modules/iam/aws//modules/iam-group"
 
   create_role                   = true
   role_name                     = "AmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
