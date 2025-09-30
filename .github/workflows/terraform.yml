@@ -39,6 +39,7 @@ jobs:
     - name: Terraform plan
       id: plan
       run: |
+        echo ${GITHUB_COMMIT_HASH::8}
         terraform plan -no-color -out=tfplan
         terraform show -no-color tfplan > plan.txt
         echo "plan<<EOF" >> $GITHUB_OUTPUT
