@@ -1,3 +1,4 @@
+# Github Actions workflow file to automate Terraform plan and apply
 name: Terraform
 
 on:
@@ -9,6 +10,9 @@ on:
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   terraform-plan:
     runs-on: ubuntu-latest
@@ -18,7 +22,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials (via GitHub OIDC)
-      uses: aws-actions/configure-aws-credentials@v3
+      uses: aws-actions/configure-aws-credentials@v5.0.0
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         aws-region: us-east-1
@@ -32,23 +36,15 @@ jobs:
     - name: Terraform init
       run: terraform init -input=false
 
-    - name: Select workspace
-      run: |
-        # map PR base branch to workspace (simple example)
-        if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
-          terraform workspace select prod || terraform workspace new prod
-        elif [ "${{ github.event.pull_request.base.ref }}" = "staging" ]; then
-          terraform workspace select staging || terraform workspace new staging
-        else
-          terraform workspace select dev || terraform workspace new dev
-        fi
-
     - name: Terraform plan
       id: plan
       run: |
+        echo ${GITHUB_COMMIT_HASH::8}
         terraform plan -no-color -out=tfplan
         terraform show -no-color tfplan > plan.txt
-        echo "::set-output name=plan::$(sed -n '1,400p' plan.txt | sed 's/%/%%/g' | sed ':a;N;$!ba;s/\n/\\n/g')"
+        echo "plan<<EOF" >> $GITHUB_OUTPUT
+        sed -n '1,400p' plan.txt | sed 's/%/%%/g' >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
 
     - name: Comment plan on PR
       uses: peter-evans/create-or-update-comment@v2
@@ -69,16 +65,17 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials (via GitHub OIDC)
-      uses: aws-actions/configure-aws-credentials@v3
+      uses: aws-actions/configure-aws-credentials@v5.0.0
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         aws-region: us-east-1
         role-session-name: tf-apply-session
 
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
+      uses: hashicorp/setup-terraform@v3
       with:
-        terraform_version: 1.6.0
+        cli_config_credentials_token: ${{ secrets.TF_TOKEN }}
+        terraform_version: 1.1.7
 
     - name: Terraform init
       run: terraform init -input=false

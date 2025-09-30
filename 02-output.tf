@@ -1,15 +1,29 @@
+output "cluster_endpoint" {
+  description = "Endpoint for EKS control plane"
+  value       = module.eks.cluster_endpoint
+}
+
+output "cluster_security_group_id" {
+  description = "Security group ids attached to the cluster control plane"
+  value       = module.eks.cluster_security_group_id
+}
+
+output "region" {
+  description = "AWS region"
+  value       = var.aws_region
+}
+
 output "cluster_name" {
-  description = "The name of the Kubernetes cluster"
-  value       = module.kubernetes_cluster.name
+  description = "Kubernetes Cluster Name"
+  value       = module.eks.cluster_name
 }
 
-output "kubeconfig" {
-  description = "Kubeconfig file content for the cluster"
-  value       = module.kubernetes_cluster.kube_config_raw
-  sensitive   = true
+output "kubeconfig_certificate_authority_data" {
+  description = "Base64 encoded certificate data required to communicate with the cluster"
+  value       = module.eks.cluster_certificate_authority_data
 }
 
-output "oidc_provider_url" {
-  description = "OIDC provider URL for the cluster"
-  value       = module.kubernetes_cluster.oidc_issuer_url
+output "node_security_group_id" {
+  description = "Security group ID created by EKS for the nodes"
+  value       = module.eks.node_security_group_id
 }
